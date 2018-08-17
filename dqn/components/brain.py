@@ -1,11 +1,16 @@
-from keras.models import Sequential
-from keras.layers import *
-from keras.optimizers import *
-from keras import backend as K
+# from keras.models import Sequential
+# from keras.layers import *
+# from keras.optimizers import *
+# from keras import backend as K
 
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import tensorflow as tf
+# import os
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# import tensorflow as tf
+
+import pdb
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 def huber_loss(y_true, y_pred):
     huber_loss_delta = 1.0
@@ -18,17 +23,47 @@ def huber_loss(y_true, y_pred):
     return K.mean(loss)
 
 
-class Q_Network:
-  def __init__(self, num_states, num_actions, learning_rate, use_target=False):
+class Brain:
+  def __init__(self, num_states, num_actions, config):
     self.num_states = num_states
     self.num_actions = num_actions
-    self.learning_rate = learning_rate
+    self.hidden_dim = config['hidden_dim']
 
-    self.use_target = use_target
-    self.main_model = self._create_model()
-    if use_target:
-      self.target_network = self._create_model()
-    # self.model.load_weights("cartpole-basic.h5")
+    self.main_network = self._create_model()
+    self.target_network = self._create_model()
+    self.optimizer = optim.Adam(self.main_network.parameters())
+
+  def _create_model(self):
+    return Q_Network(self.num_states, self.num_actions, self.hidden_dim)
+
+  def train(self, loss):
+    self.optimizer.zero_grad()
+    loss.backward()
+    self.optimizer.step()
+
+  def update_target_network(self):
+    learned_weights = self.main_network.state_dict()
+    self.target_network.load_state_dict(learned_weights)
+
+class Q_Network(nn.Module):
+  def __init__(self, num_states, num_actions, hidden_dim):
+    super(Q_Network, self).__init__()
+    self.fc1 = nn.Linear(num_states, hidden_dim)
+    self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+    self.fc3 = nn.Linear(hidden_dim, num_actions)
+
+  def forward(self, x):
+    x = torch.relu(self.fc1(x))
+    x = torch.relu(self.fc2(x))
+    x = torch.sigmoid(self.fc3(x))  # or torch.softmax for multi-category
+    return x
+
+class Keras_Q_Network:
+  def __init__(self, num_states, num_actions, config):
+    self.num_states = num_states
+    self.num_actions = num_actions
+    self.learning_rate = config['learning_rate']
+    self.main_network = self._create_model()
 
   def _create_model(self):
     model = Sequential()
@@ -42,18 +77,18 @@ class Q_Network:
     return model
 
   def train(self, x, y, epoch=1, verbose=0):
-    self.main_model.fit(x, y, batch_size=64, epochs=epoch, verbose=verbose)
+    self.main_network.fit(x, y, batch_size=64, epochs=epoch, verbose=verbose)
 
   def predict(self, s, target=False):
     if target:
       return self.target_network.predict(s)
     else:
-      return self.main_model.predict(s)
+      return self.main_network.predict(s)
 
   def predict_one(self, state):
     flat_state = state.reshape(1, self.num_states)
     return self.predict(flat_state).flatten()
 
   def update_target_network(self):
-    learned_weights = self.main_model.get_weights()
+    learned_weights = self.main_network.get_weights()
     self.target_network.set_weights(learned_weights)
