@@ -1,11 +1,11 @@
-# from keras.models import Sequential
-# from keras.layers import *
-# from keras.optimizers import *
-# from keras import backend as K
+from keras.models import Sequential
+from keras.layers import *
+from keras.optimizers import *
+from keras import backend as K
 
-# import os
-# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-# import tensorflow as tf
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tensorflow as tf
 
 import pdb
 import torch
@@ -58,12 +58,13 @@ class Q_Network(nn.Module):
     x = torch.sigmoid(self.fc3(x))  # or torch.softmax for multi-category
     return x
 
-class Keras_Q_Network:
+class Keras_Brain:
   def __init__(self, num_states, num_actions, config):
     self.num_states = num_states
     self.num_actions = num_actions
     self.learning_rate = config['learning_rate']
     self.main_network = self._create_model()
+    self.target_network = self._create_model()
 
   def _create_model(self):
     model = Sequential()
@@ -71,7 +72,7 @@ class Keras_Q_Network:
     model.add(Dense(units=self.num_actions, activation='linear'))
 
     opt = RMSprop(lr=self.learning_rate)
-    loss_func = huber_loss if self.use_target else 'mse'
+    loss_func = huber_loss # 'mse'
     model.compile(loss=loss_func, optimizer=opt)
 
     return model

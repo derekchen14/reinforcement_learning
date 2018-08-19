@@ -58,7 +58,7 @@ if __name__ == "__main__":
       agent = world.run_episode(agent)
       average = world.calculate_average()
 
-      if episode%120 == 0: #  and (agent.name != "random"):
+      if episode%50 == 0: #  and (agent.name != "random"):
         print("Ep {0}) reward: {1}, average: {2:.2f}".format(episode, \
             world.all_rewards[-1], average))
       if average > 100.0:
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         world.all_rewards.extend([1] * remaining)
         break
 
-    print("Final average: {:.3f}".format(sum(world.all_rewards) / float(len(world.all_rewards))))
+    # print("Final average: {:.3f}".format(sum(world.all_rewards) / float(len(world.all_rewards))))
     artist.draw(world.all_rewards)
     if args.num_runs > 1:
       universal_rewards += np.array(world.all_rewards)

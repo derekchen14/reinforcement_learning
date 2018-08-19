@@ -22,9 +22,11 @@ class World:
       # self.environment.render()
       action = agent.act(current_state)
       next_state, reward, done, _ = self.environment.step(action)
+      next_state = None if done else next_state
 
-      agent.observe(current_state, action, reward, next_state, done)
-      agent.learn()
+      agent.observe((current_state, action, reward, next_state))
+      # agent.observe(current_state, action, reward, next_state, done)
+      agent.keras_learn()
 
       current_state = next_state
       total_reward += reward

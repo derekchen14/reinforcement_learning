@@ -18,6 +18,13 @@ class ExperienceReplayBuffer:   # stored as ( s, a, r, s'_ )
         sample = (state, action, reward, next_state, done)
         self.buffer.append(sample)
 
+    def keras_remember(self, sample):
+        self.buffer.append(sample)
+
+    def keras_get_batch(self, batch_size):
+        num_samples = min(batch_size, len(self.buffer))
+        return random.sample(self.buffer, num_samples)
+
     def get_batch(self, batch_size):
         num_samples = min(batch_size, len(self.buffer))
         state, action, reward, next_state, done = zip(*random.sample(self.buffer, num_samples))
