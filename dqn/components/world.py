@@ -16,9 +16,9 @@ class World:
   def run_episode(self, agent):
     current_state = self.environment.reset()
     done = False
-    total_reward = 0
+    episode_reward = 0
 
-    while not done and (total_reward <= self.max_timesteps):
+    while not done and (episode_reward <= self.max_timesteps):
       action = agent.act(current_state)
       next_state, reward, done, _ = self.environment.step(action)
 
@@ -29,8 +29,8 @@ class World:
       agent.learn()
 
       current_state = next_state
-      total_reward += reward
+      episode_reward += reward
 
-    self.all_rewards.append(total_reward)
+    self.all_rewards.append(episode_reward)
 
     return agent

@@ -13,7 +13,7 @@ from components.world import World
 from components.plotting import Artist
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-p','--problem', default='CartPole-v1', type=str,
+parser.add_argument('-p','--problem', default='CartPole-v0', type=str,
     choices=['CartPole-v0', 'CartPole-v1', 'FrozenLake-v0', 'Taxi-v2'])
 parser.add_argument('-m', '--model', default='dqn', type=str,
     choices=['basic', 'dqn', 'a3c', 'random'], help='model type to choose from')
@@ -55,11 +55,11 @@ if __name__ == "__main__":
     agent.memory.buffer = random_actor.memory.buffer
     world.all_rewards = []  # reset since we only care about rewards for agent
 
-    for episode in range(args.num_episodes):
+    for episode in range(args.num_episodes + 1):
       agent = world.run_episode(agent)
       average = world.calculate_average()
 
-      if episode%100 == 0: #  and (agent.name != "random"):
+      if episode > 0 and episode%100 == 0:
         print("Ep {0}) reward: {1}, average: {2:.2f}".format(episode, \
             world.all_rewards[-1], average))
       if average > 100.0:
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # print("Final average: {:.3f}".format(sum(world.all_rewards) / float(len(world.all_rewards))))
     artist.draw(world.all_rewards)
     if args.num_runs > 1:
-      universal_rewards += np.array(world.all_rewards)
+      universal_rewards += np.array(world.all_rewards[1:])
 
     if args.save_weights:
       agent.brain.main_model.save("{}-{}.h5".format(args.problem, args.model))

@@ -34,7 +34,8 @@ class Brain:
     self.optimizer = optim.Adam(self.main_network.parameters())
 
   def _create_model(self):
-    return Q_Network(self.num_states, self.num_actions, self.hidden_dim)
+    net = Q_Network(self.num_states, self.num_actions, self.hidden_dim)
+    return net.cuda() if torch.cuda.is_available() else net
 
   def train(self, pred, target):
     loss = nn.SmoothL1Loss()  # huber_loss
@@ -53,13 +54,13 @@ class Q_Network(nn.Module):
   def __init__(self, num_states, num_actions, hidden_dim):
     super(Q_Network, self).__init__()
     self.fc1 = nn.Linear(num_states, hidden_dim)
-    # self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+    self.fc2 = nn.Linear(hidden_dim, hidden_dim)
     self.fc3 = nn.Linear(hidden_dim, num_actions)
 
   def forward(self, x):
     x = torch.relu(self.fc1(x))
-    # x = torch.relu(self.fc2(x))
-    x = torch.sigmoid(self.fc3(x))  # or torch.softmax for multi-category
+    x = torch.relu(self.fc2(x))
+    x = self.fc3(x)
     return x
 
 class Keras_Brain:

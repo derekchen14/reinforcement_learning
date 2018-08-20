@@ -5,6 +5,8 @@ import pdb
 from collections import deque
 
 class ExperienceReplayBuffer:   # stored as ( s, a, r, s'_ )
+    def __len__(self):
+        return len(self.buffer)
 
     def __init__(self, capacity):
         self.buffer = deque(maxlen=capacity)
@@ -17,8 +19,7 @@ class ExperienceReplayBuffer:   # stored as ( s, a, r, s'_ )
         self.buffer.append(sample)
 
     def get_batch(self, batch_size):
-        num_samples = min(batch_size, len(self.buffer))
-        state, action, reward, next_state, done = zip(*random.sample(self.buffer, num_samples))
+        state, action, reward, next_state, done = zip(*random.sample(self.buffer, batch_size))
         return np.concatenate(state), action, reward, np.concatenate(next_state), done
 
     def has_more_space(self):
