@@ -4,13 +4,12 @@ import numpy as np
 from torch import Tensor, LongTensor
 
 from components.memory import ExperienceReplayBuffer
-from components.brain import Brain, Keras_Brain
+from components.brain import Brain
 
 GAMMA = 0.99
 EPSILON_START = 1.0
 EPSILON_END = 0.01        # 0.1
-EPSILON_DECAY = 3000      # speed of decay, larger means slower decay
-MEMORY_CAPACITY = 100000
+EPSILON_DECAY = 700       # speed of decay, larger means slower decay
 UPDATE_TARGET_FREQUENCY = 1000
 
 BATCH_SIZE = 64
@@ -26,8 +25,8 @@ class Agent:
     self.use_target = True
     self.learning_rate = config['learning_rate']
 
-    self.brain = Keras_Brain(num_states, num_actions, config)
-    self.memory = ExperienceReplayBuffer(MEMORY_CAPACITY)
+    self.brain = Brain(num_states, num_actions, config)
+    self.memory = ExperienceReplayBuffer(config['buffer_size'])
 
   @staticmethod
   def configure_model(args):
@@ -36,6 +35,7 @@ class Agent:
       'model_type': args.model,
       'optimizer': args.optimizer,
       'hidden_dim': HIDDEN_DIM,
+      'buffer_size': args.buffer_size,
     }
 
   def act(self, state):
@@ -43,22 +43,19 @@ class Agent:
       random_action = random.randrange(self.num_actions)
       return random_action
     else:
-      q_val_per_action = self.brain.predict_one(state)
-      return np.argmax(q_val_per_action)
-    '''
-    else:
       current_state = Tensor(state).unsqueeze(0)
       q_val_per_action = self.brain.main_network(current_state)
       # recall that max() returns tuple of (max_value, max_index)
       top_action = q_val_per_action.max(1)[1].numpy()[0]
       return top_action
+    '''
+    else:
+      q_val_per_action = self.brain.predict_one(state)
+      return np.argmax(q_val_per_action)
+    '''
 
   def observe(self, *episode):
     self.memory.remember(*episode)  #(s, a, r, s') + done
-    '''
-
-  def observe(self, episode):
-    self.memory.keras_remember(episode)  #(s, a, r, s') + done
 
     if self.steps % UPDATE_TARGET_FREQUENCY == 0:
         self.brain.update_target_network()
@@ -83,7 +80,7 @@ class Agent:
     empty = np.zeros(self.num_states)
     next_states = np.array([ (empty if o[3] is None else o[3]) for o in batch ])
     # double_Q_score = self.brain.predict(next_states, target=False)
-    future_Q_score = self.brain.predict(next_states, target=self.use_target)
+    future_Q_score = self.brain.predict(next_states, target=True)
 
     # the inputs into our neural network, which are the set of states
     x = np.zeros((batch_length, self.num_states))
@@ -94,39 +91,14 @@ class Agent:
 
     for idx, episode in enumerate(batch):
       current_state, action, reward, next_state = episode
-      # by default we are correct, so initialize our target to be our prediction
-      targets = predicted_Q_score[idx]
-      old_value = targets[action]
-      # we have an actual reward signal for one particular action
-      # so update the target Q-score for that specific action
-      if next_state is None:
-        # then game_over, so no future reward
-        targets[action] = reward
-      elif self.name == 'double_dqn':
-        selected_action = np.argmax(double_Q_score[idx])
-        targets[action] = reward + GAMMA * future_Q_score[idx][ selected_action ]
-      else:
-        # current reward plus discounted future reward
-        targets[action] = reward + GAMMA * np.amax(future_Q_score[idx])
-
-      x[idx] = current_state
-      y[idx] = targets  # Q-scores per action
-      errors[idx] = abs(targets[action] - old_value)
-
-    self.brain.train(x, y)
-
-    return (x, y, errors)
-    '''
-    for idx, episode in enumerate(batch):
-      current_state, action, reward, next_state = episode
       # we have an actual reward signal for one particular action
       # so update the target Q-score for that specific action
       if next_state is None:
         # then game_over, so no future reward
         target = reward
-      elif self.name == 'double_dqn':
-        selected_action = np.argmax(double_Q_score[idx])
-        target = reward + GAMMA * future_Q_score[idx][ selected_action ]
+      # elif self.name == 'double_dqn':
+      #   selected_action = np.argmax(double_Q_score[idx])
+      #   target = reward + GAMMA * future_Q_score[idx][ selected_action ]
       else:
         # current reward plus discounted future reward
         target = reward + GAMMA * np.amax(future_Q_score[idx])
@@ -138,7 +110,10 @@ class Agent:
       #   measure of the expected reward because you experienced that outcome
       y[idx][action] = target
       errors[idx] = abs(predicted_Q_score[idx][action] - target)
-    '''
+
+    self.brain.train(x, y)
+
+    return (x, y, errors)
 
   def learn(self):
     # Each item is a vector/array with length equal to batch size
@@ -159,27 +134,31 @@ class Agent:
     #     indexer, so we unsqueeze a dim into action to meet the requirement
     pred_q_val = predicted_Q_score.gather(1, action.unsqueeze(1)).squeeze(1)
     # when "done" is true, next_q_val is eliminated
-    discounted_future_reward = GAMMA * future_Q_score.max(1)[0] * (1 - done)
+    future_reward = future_Q_score.detach().max(1)[0] * (1 - done)
     # our best prediction of Q(s', a'), which serves as part of the target label
+    discounted_future_reward = GAMMA * future_reward
     target_q_val = current_reward + discounted_future_reward
+    self.brain.train(pred_q_val, target_q_val)
 
-    loss = (pred_q_val - target_q_val).pow(2).mean()
-    self.brain.train(loss)
-
+'''
+Note: the SmoothL1Loss only supports taking the derivative of the input, and
+  not the target.  This is why we add the "detach" to the target which is used
+  to calculate the target reward.  This is ok because the target reward comes
+  from the target_network, and we don't want to update the weights of that
+  network explicitly and thus we don't need to take its gradient w.r.t. the loss
+'''
 
 class RandomActor:
-  def __init__(self, num_actions):
+  def __init__(self, num_actions, config):
     self.name = "random"
     self.num_actions = num_actions
-    self.memory = ExperienceReplayBuffer(MEMORY_CAPACITY)
+    self.memory = ExperienceReplayBuffer(config['buffer_size'])
 
   def act(self, s):
     return random.randint(0, self.num_actions-1)
 
-  # def observe(self, *episode):  # in (s, a, r, s_) format
-  #   self.memory.remember(*episode)
-  def observe(self, sample):
-    self.memory.keras_remember(sample)
+  def observe(self, *episode):
+    self.memory.remember(*episode)
 
   def learn(self):
     pass  # since this agent will always act randomly

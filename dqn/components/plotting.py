@@ -11,7 +11,7 @@ class Artist(object):
     plt.plot(rewards, self.color)
     plt.xlabel('Episode')
     plt.ylabel('Total Reward')
-    plt.ylim(0, 400)
+    # plt.ylim(0, 400)
     if self.show:
       plt.show()
     if self.save:

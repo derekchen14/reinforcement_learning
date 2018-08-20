@@ -19,14 +19,14 @@ class World:
     total_reward = 0
 
     while not done and (total_reward <= self.max_timesteps):
-      # self.environment.render()
       action = agent.act(current_state)
       next_state, reward, done, _ = self.environment.step(action)
-      next_state = None if done else next_state
 
-      agent.observe((current_state, action, reward, next_state))
-      # agent.observe(current_state, action, reward, next_state, done)
-      agent.keras_learn()
+      # self.environment.render()
+      # next_state = None if done else next_state
+      # agent.observe((current_state, action, reward, next_state))
+      agent.observe(current_state, action, reward, next_state, done)
+      agent.learn()
 
       current_state = next_state
       total_reward += reward
