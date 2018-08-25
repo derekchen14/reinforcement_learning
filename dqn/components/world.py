@@ -22,9 +22,6 @@ class World:
       action = agent.act(current_state)
       next_state, reward, done, _ = self.environment.step(action)
 
-      # self.environment.render()
-      # next_state = None if done else next_state
-      # agent.observe((current_state, action, reward, next_state))
       agent.observe(current_state, action, reward, next_state, done)
       agent.learn()
 
@@ -34,3 +31,7 @@ class World:
     self.all_rewards.append(episode_reward)
 
     return agent
+
+# self.environment.render()
+# next_state = None if done else next_state
+# agent.observe((current_state, action, reward, next_state))

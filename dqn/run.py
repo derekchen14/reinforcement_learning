@@ -14,8 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-p','--problem', default='CartPole-v1', type=str,
     choices=['CartPole-v1', 'CartPole-v0', 'Acrobot-v1', 'Taxi-v2'])
 parser.add_argument('-m', '--model', default='dqn', type=str,
-    choices=['dqn', 'dueling', 'prioritized', 'noisy', 'rainbow', 'a3c'],
-    help='model type to choose from')
+    choices=['dqn', 'dueling', 'prioritized', 'noisy', 'rainbow', 'a3c'])
 
 parser.add_argument('-t','--print-every', default=20, type=int)
 parser.add_argument('-l','--learning-rate', default=0.001, type=float)
@@ -37,7 +36,7 @@ if __name__ == "__main__":
   config = Agent.configure_model(args)
 
   for run in range(args.num_runs):
-    artist = Artist('dqn_{}'.format(run+1), color='c', save=True)
+    # artist = Artist('dqn_{}'.format(run+1), color='c', save=args.save_weights)
     random_actor = RandomActor(num_actions, config)
     while random_actor.memory.has_more_space():
       random_actor = world.run_episode(random_actor)
@@ -58,6 +57,6 @@ if __name__ == "__main__":
         break
 
     print("Final average: {:.3f}".format(float(sum(world.all_rewards)) / len(world.all_rewards)))
-    artist.draw(world.all_rewards)
+    # artist.draw(world.all_rewards)
     if args.save_weights:
       agent.brain.main_model.save("{}-{}.h5".format(args.problem, args.model))

@@ -3,7 +3,7 @@ import math, random
 import numpy as np
 from torch import Tensor, LongTensor
 
-from components.memory import ExperienceReplayBuffer
+from components.memory import ExperienceReplayBuffer, PrioritizedReplayBuffer
 from components.brain import Brain
 
 GAMMA = 0.99
@@ -18,7 +18,7 @@ HIDDEN_DIM = 128
 class Agent:
   def __init__(self, num_states, num_actions, config):
     self.name = "student"
-    self.steps = 0.0
+    self.steps = 0.0    # global frame counter
     self.num_states = num_states
     self.num_actions = num_actions
     self.epsilon = EPSILON_START
@@ -26,7 +26,10 @@ class Agent:
     self.learning_rate = config['learning_rate']
 
     self.brain = Brain(num_states, num_actions, config)
-    self.memory = ExperienceReplayBuffer(config['buffer_size'])
+    if config['model_type'] == 'prioritized':
+      self.memory =  PrioritizedReplayBuffer(config['buffer_size'])
+    else:
+      self.memory = ExperienceReplayBuffer(config['buffer_size'])
 
   @staticmethod
   def configure_model(args):
@@ -35,6 +38,7 @@ class Agent:
       'model_type': args.model,
       'optimizer': args.optimizer,
       'hidden_dim': HIDDEN_DIM,
+      'prioritized': True if args.model == 'prioritized' else False,
       'buffer_size': args.buffer_size,
     }
 
@@ -59,6 +63,8 @@ class Agent:
 
     self.steps += 1.0   # anneal epsilon
     self.epsilon = EPSILON_END + (EPSILON_START - EPSILON_END) * math.exp(-self.steps / EPSILON_DECAY)
+    if self.memory.ordering == 'prioritized':
+      self.memory.update_beta(self.steps)
 
   def learn(self):
     # Each item is a vector/array with length equal to batch size
@@ -86,7 +92,13 @@ class Agent:
     future_reward = GAMMA * next_q_val.detach() * (1 - done)
     # our best prediction of Q(s', a'), which serves as part of the target label
     target_q_val = current_reward + future_reward
-    self.brain.train(pred_q_val, target_q_val)
+
+    if self.memory.ordering == 'prioritized':
+      weights = Tensor(self.memory.weights)
+      td_error = self.brain.train_with_per(pred_q_val, target_q_val, weights)
+      self.memory.update_priorities(td_error.data.cpu().numpy())
+    else:
+      self.brain.train(pred_q_val, target_q_val)
 
 class RandomActor:
   def __init__(self, num_actions, config):
