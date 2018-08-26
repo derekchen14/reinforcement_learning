@@ -22,11 +22,11 @@ class Agent:
     self.num_states = num_states
     self.num_actions = num_actions
     self.epsilon = EPSILON_START
-    self.use_target = True
+    self.model_type = config['model_type']
     self.learning_rate = config['learning_rate']
 
     self.brain = Brain(num_states, num_actions, config)
-    if config['model_type'] == 'prioritized':
+    if config['prioritized']:
       self.memory =  PrioritizedReplayBuffer(config['buffer_size'])
     else:
       self.memory = ExperienceReplayBuffer(config['buffer_size'])
@@ -38,12 +38,13 @@ class Agent:
       'model_type': args.model,
       'optimizer': args.optimizer,
       'hidden_dim': HIDDEN_DIM,
-      'prioritized': True if args.model == 'prioritized' else False,
+      'prioritized': args.prioritized,
       'buffer_size': args.buffer_size,
     }
 
   def act(self, state):
-    if random.random() < self.epsilon:
+    # always act greedily with NoisyNet because already enough exploration
+    if random.random() < self.epsilon and self.model_type is not 'noisy':
       random_action = random.randrange(self.num_actions)
       return random_action
     else:
@@ -99,6 +100,9 @@ class Agent:
       self.memory.update_priorities(td_error.data.cpu().numpy())
     else:
       self.brain.train(pred_q_val, target_q_val)
+    if self.model_type == "noisy":
+      self.brain.reset_noise()
+
 
 class RandomActor:
   def __init__(self, num_actions, config):

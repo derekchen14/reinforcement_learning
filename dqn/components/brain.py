@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import torch
 import torch.nn as nn
@@ -30,6 +31,8 @@ class Brain:
       net = DQN(self.num_states, self.num_actions, self.hidden_dim)
     elif model_type == 'dueling':
       net = Dueling(self.num_states, self.num_actions, self.hidden_dim)
+    elif model_type == 'noisy':
+      net = NoisyNet(self.num_states, self.num_actions, self.hidden_dim)
     elif model_type == 'rainbow':
       net = Rainbow(self.num_states, self.num_actions, self.hidden_dim)
     return net.cuda() if torch.cuda.is_available() else net
@@ -65,6 +68,13 @@ class Brain:
     learned_weights = self.main_network.state_dict()
     self.target_network.load_state_dict(learned_weights)
 
+  def reset_noise(self):
+    self.main_network.noisy1.reset_noise()
+    self.main_network.noisy2.reset_noise()
+    self.target_network.noisy1.reset_noise()
+    self.target_network.noisy2.reset_noise()
+
+
 class DQN(nn.Module):
   def __init__(self, num_states, num_actions, hidden_dim):
     super(DQN, self).__init__()
@@ -77,6 +87,21 @@ class DQN(nn.Module):
     x = torch.relu(self.fc2(x))
     x = self.fc3(x)
     return x
+
+
+class NoisyNet(nn.Module):
+  def __init__(self, num_states, num_actions, hidden_dim):
+    super(NoisyNet, self).__init__()
+    self.linear = nn.Linear(num_states, hidden_dim)
+    self.noisy1 = NoisyLayer(hidden_dim, hidden_dim)
+    self.noisy2 = NoisyLayer(hidden_dim, num_actions)
+
+  def forward(self, x):
+    x = torch.relu(self.linear(x))
+    x = torch.relu(self.noisy1(x))
+    x = self.noisy2(x)
+    return x
+
 
 class Dueling(nn.Module):
   def __init__(self, num_states, num_actions, hidden_dim):
@@ -96,6 +121,55 @@ class Dueling(nn.Module):
     return value + advantage  - advantage.mean()
 
 
+class NoisyLayer(nn.Module):
+  def __init__(self, in_dim, out_dim, std_init=0.4):
+    super(NoisyLayer, self).__init__()
+    self.in_dim = in_dim
+    self.out_dim = out_dim
+    self.std_init = std_init
+
+    self.weight_mu    = nn.Parameter(Tensor(out_dim, in_dim))
+    self.weight_sigma = nn.Parameter(Tensor(out_dim, in_dim))
+    self.register_buffer('weight_epsilon', Tensor(out_dim, in_dim))
+
+    self.bias_mu    = nn.Parameter(Tensor(out_dim))
+    self.bias_sigma = nn.Parameter(Tensor(out_dim))
+    self.register_buffer('bias_epsilon', Tensor(out_dim))
+
+    self.reset_parameters()
+    self.reset_noise()
+
+  def forward(self, x):
+    if self.training:
+      weight = self.weight_mu + self.weight_sigma.mul(self.weight_epsilon)
+      bias   = self.bias_mu   + self.bias_sigma.mul(self.bias_epsilon)
+    else:
+      weight = self.weight_mu
+      bias   = self.bias_mu
+
+    return nn.functional.linear(x, weight, bias)
+
+  def reset_parameters(self):
+      mu_range = 1 / math.sqrt(self.weight_mu.size(1))
+
+      self.weight_mu.data.uniform_(-mu_range, mu_range)
+      self.weight_sigma.data.fill_(self.std_init / math.sqrt(self.weight_sigma.size(1)))
+
+      self.bias_mu.data.uniform_(-mu_range, mu_range)
+      self.bias_sigma.data.fill_(self.std_init / math.sqrt(self.bias_sigma.size(0)))
+
+  def reset_noise(self):
+      epsilon_in  = self._scale_noise(self.in_dim)
+      epsilon_out = self._scale_noise(self.out_dim)
+      # using factorized Gaussian noise (rather than independent) with
+      # torch.ger() which performs a non-broadcasting outer product
+      self.weight_epsilon.copy_(epsilon_out.ger(epsilon_in))
+      self.bias_epsilon.copy_(self._scale_noise(self.out_dim))
+
+  def _scale_noise(self, size):
+      x = torch.randn(size)
+      x = x.sign().mul(x.abs().sqrt())
+      return x
 
 
 

@@ -11,13 +11,16 @@ from components.world import World
 from components.plotting import Artist
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-p','--problem', default='CartPole-v1', type=str,
+parser.add_argument('--problem', default='CartPole-v1', type=str,
     choices=['CartPole-v1', 'CartPole-v0', 'Acrobot-v1', 'Taxi-v2'])
 parser.add_argument('-m', '--model', default='dqn', type=str,
-    choices=['dqn', 'dueling', 'prioritized', 'noisy', 'rainbow', 'a3c'])
+    choices=['dqn', 'dueling', 'noisy', 'rainbow', 'a3c'])
+
+parser.add_argument('-p', '--prioritized', default=False, action='store_true')
+parser.add_argument('-d', '--dueling', default=False, action='store_true')
 
 parser.add_argument('-t','--print-every', default=20, type=int)
-parser.add_argument('-l','--learning-rate', default=0.001, type=float)
+parser.add_argument('-l','--learning-rate', default=0.001, type=float) # 0.0001
 parser.add_argument('-o','--optimizer', default="adam", type=str)
 parser.add_argument('-e','--num-episodes', default=140, type=int)
 parser.add_argument('-r','--num-runs', default=1, type=int)
