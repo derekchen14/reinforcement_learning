@@ -19,19 +19,14 @@ class World:
     episode_reward = 0
 
     while not done and (episode_reward <= self.max_timesteps):
-      action = agent.act(current_state)
+      action, log_prob = agent.act(current_state)
       next_state, reward, done, _ = self.environment.step(action)
 
-      agent.observe(current_state, action, reward, next_state, done)
-      agent.learn()
-
+      agent.observe(done, reward, log_prob)
+      # if agent == 'ACER': agent.learn()
       current_state = next_state
       episode_reward += reward
 
     self.all_rewards.append(episode_reward)
 
     return agent
-
-# self.environment.render()
-# next_state = None if done else next_state
-# agent.observe((current_state, action, reward, next_state))

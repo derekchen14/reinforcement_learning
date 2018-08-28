@@ -93,8 +93,8 @@ def display_progress():
         print('Episode {}\tLast length: {:5d}\tAverage length: {:.2f}'.format(
             episode_idx, t, running_reward))
     if running_reward > env.spec.reward_threshold:
-        print("Solved! Running reward is now {} and "
-              "the last episode runs to {} time steps!".format(running_reward, t))
+        print("Solved! Running reward {}, last episode {} time steps!".format(
+            running_reward, t))
         break
 
 
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     optimizer = optim.Adam(policy.parameters(), lr=1e-2)
     eps = np.finfo(np.float32).eps.item()
 
-    for episode_idx in count(1):
+    for episode_idx in count(1000):
         state = env.reset()
 
         rollout_episode()

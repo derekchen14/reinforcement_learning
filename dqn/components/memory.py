@@ -26,7 +26,6 @@ class ExperienceReplayBuffer(object):   # stored as ( s, a, r, s'_ )
     ratio = len(self.buffer) / self.capacity
     if ratio > 0.1 and round(ratio, 4) % 0.125 == 0:
       print("Replay buffer now {:.1f}% filled".format(ratio*100))
-
     return len(self.buffer) < self.capacity
 
   def __len__(self):

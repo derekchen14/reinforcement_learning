@@ -46,7 +46,7 @@ def main():
         plt.pause(0.001)  # pause a bit so that plots are updated
 
     # Parameters
-    num_episode = 5000
+    num_episode = 500
     batch_size = 5
     learning_rate = 0.01
     gamma = 0.99
@@ -60,7 +60,6 @@ def main():
     action_pool = []
     reward_pool = []
     steps = 0
-
 
     for e in range(num_episode):
 

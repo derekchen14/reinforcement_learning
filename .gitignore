@@ -1,3 +1,6 @@
+reference/
+pg/reference/
+pg/results/
 dqn/reference/
 dqn/results/
 *.DS_Store
