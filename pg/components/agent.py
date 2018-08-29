@@ -45,7 +45,7 @@ class Agent:
     prob_per_action = self.brain.policy(current_state)
     m = Bernoulli(prob_per_action)  # Categorical(prob_per_action)
     sampled_action = m.sample()
-    log_prob = m.log_prob(Tensor(sampled_action))
+    log_prob = m.log_prob(Tensor(sampled_action))  # sampled_action.float()
 
     return int(sampled_action.item()), log_prob
 

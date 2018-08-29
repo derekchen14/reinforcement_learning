@@ -49,13 +49,12 @@ class A2C(nn.Module):
 class PolicyNet(nn.Module):
   def __init__(self, num_states, num_actions, hidden_dim):
     super(PolicyNet, self).__init__()
-    self.fc1 = nn.Linear(num_states, hidden_dim)  # 4, 24
-    self.fc2 = nn.Linear(hidden_dim, hidden_dim)  # 24, 36
-    self.fc3 = nn.Linear(hidden_dim, 1) # 36, 1
+    self.fc1 = nn.Linear(num_states, hidden_dim)
+    self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+    self.fc3 = nn.Linear(hidden_dim, 1)  # num_actions
 
   def forward(self, x):
     x = torch.relu(self.fc1(x))
     x = torch.relu(self.fc2(x))
-    x = torch.sigmoid(self.fc3(x))
-    # x = torch.softmax(self.fc3(x))
+    x = torch.sigmoid(self.fc3(x)) # .softmax(self.fc3(x), dim=1)
     return x
