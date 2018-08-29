@@ -20,7 +20,7 @@ parser.add_argument('-t','--print-every', default=20, type=int)
 parser.add_argument('-l','--learning-rate', default=0.01, type=float)
 parser.add_argument('-o','--optimizer', default="rms", type=str)
 parser.add_argument('-e','--num-episodes', default=140, type=int)
-parser.add_argument('-r','--num-runs', default=1, type=int)
+parser.add_argument('-r','--num-runs', default=3, type=int)
 parser.add_argument('-b','--buffer-size', default=14000, type=int)
 parser.add_argument('-s','--save-weights', default=False, action='store_true')
 

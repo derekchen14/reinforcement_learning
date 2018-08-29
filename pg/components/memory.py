@@ -13,17 +13,18 @@ class ExperienceReplayBuffer(object):
   def reset_experience(self):
     self.done_history = []
     self.reward_pool = []
-    self.log_probabilities = []
+    self.log_probs = []
     self.frame_count = 0
 
   def remember(self, done, reward, log_prob):
     self.done_history.append(done)
     self.reward_pool.append(reward)
-    self.log_probabilities.append(log_prob)
+    self.log_probs.append(log_prob)
 
-  def prepare_batch(self):
+  def get_batch(self):
     self._discount_rewards()
     self._normalize_rewards()
+    return self.log_probs, self.reward_pool
 
   def _discount_rewards(self):
     running_add = 0
@@ -35,10 +36,10 @@ class ExperienceReplayBuffer(object):
         self.reward_pool[i] = running_add
 
   def _normalize_rewards(self):
-    reward_mean = np.mean(self.reward_pool)
-    reward_std = np.std(self.reward_pool)
-    for i in range(self.frame_count):
-        self.reward_pool[i] = (self.reward_pool[i] - reward_mean) / reward_std
+    rewards = np.array(self.reward_pool)
+    rewards -= rewards.mean()
+    rewards /= rewards.std() + np.finfo(np.float32).eps
+    self.reward_pool = rewards
 
 
 class PrioritizedReplayBuffer(object):

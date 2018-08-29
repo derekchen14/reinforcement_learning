@@ -58,16 +58,9 @@ class Agent:
     # self.epsilon = EPSILON_END + (EPSILON_START - EPSILON_END) * math.exp(-self.steps / EPSILON_DECAY)
 
   def learn(self):
-    self.memory.prepare_batch()
-    self.brain.optimizer.zero_grad()
-
-    for i in range(self.memory.frame_count):
-      current_reward   = self.memory.reward_pool[i]
-      current_log_prob = self.memory.log_probabilities[i]
-      loss = -current_log_prob * current_reward
-      loss.backward()
-
-    self.brain.optimizer.step()
+    log_probs, reward_pool = self.memory.get_batch()
+    loss = [-lp * reward for lp, reward in zip(log_probs, reward_pool)]
+    self.brain.train(loss)
     self.memory.reset_experience()
 
 

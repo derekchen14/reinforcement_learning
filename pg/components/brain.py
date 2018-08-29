@@ -31,6 +31,12 @@ class Brain:
     elif config['optimizer'] == 'rms':
       return optim.RMSprop(params, config['learning_rate']) # 0.01
 
+  def train(self, loss):
+    self.optimizer.zero_grad()
+    loss = torch.cat(loss).sum()
+    loss.backward()
+    self.optimizer.step()
+
 
 class A2C(nn.Module):
   def __init__(self, num_states, num_actions, hidden_dim):
