@@ -37,19 +37,39 @@ class Brain:
     loss.backward()
     self.optimizer.step()
 
+def init(module, weight_init, bias_init, gain=1):
+    weight_init(module.weight.data, gain=gain)
+    bias_init(module.bias.data)
+    return module
+def init_normc_(weight, gain=1):
+    weight.normal_(0, 1)
+    weight *= gain / torch.sqrt(weight.pow(2).sum(1, keepdim=True))
+
 
 class A2C(nn.Module):
-  def __init__(self, num_states, num_actions, hidden_dim):
+  def __init__(self, num_states, num_actions, hidden_dim=64):
     super(A2C, self).__init__()
-    self.fc1 = nn.Linear(num_states, hidden_dim)
-    self.fc2 = nn.Linear(hidden_dim, hidden_dim)
-    self.fc3 = nn.Linear(hidden_dim, num_actions)
+    init_ = lambda m: init(m,
+        init_normc_,
+        lambda x: nn.init.constant_(x, 0))
+    # Policy Network
+    self.actor = nn.Sequential(
+        init_(nn.Linear(num_states, hidden_dim)), nn.Tanh(),
+        init_(nn.Linear(hidden_dim, hidden_dim)), nn.Tanh()
+    )
+    # Advantage Function
+    self.critic = nn.Sequential(
+        init_(nn.Linear(num_states, hidden_dim)), nn.Tanh(),
+        init_(nn.Linear(hidden_dim, hidden_dim)), nn.Tanh(),
+        init_(nn.Linear(hidden_dim, num_actions))
+    )
 
-  def forward(self, x):
-    x = torch.relu(self.fc1(x))
-    x = torch.relu(self.fc2(x))
-    x = self.fc3(x)
-    return x
+def forward(self, x):
+    actor_score = self.actor(x)
+    critic_score = self.critic(x)
+
+    return actor_score, critic_score
+
 
 
 class PolicyNet(nn.Module):

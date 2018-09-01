@@ -12,7 +12,7 @@ from components.plotting import Artist
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--problem', default='CartPole-v1', type=str,
-    choices=['CartPole-v1', 'CartPole-v0', 'Acrobot-v1', 'Taxi-v2'])
+    choices=['CartPole-v1', 'CartPole-v0', 'PongNoFrameskip-v4', 'Taxi-v2'])
 parser.add_argument('-m', '--model', default='pg', type=str,
     choices=['pg', 'a2c', 'ppo'])  # [107.4,  N/A,  N/A]
 
@@ -60,7 +60,9 @@ if __name__ == "__main__":
   print(" ")
   print("True Episode {:.3f}".format(np.average(total)))
 
-
+'''
+1. see if we can replace init, with my_init
+2. see if we can remove the special init completely
 
 
 
