@@ -1,9 +1,10 @@
 import pdb
 import random
 import numpy as np
-
+import torch
 from collections import deque
 from numpy import concatenate as concat
+random.seed(1)
 
 class ExperienceReplayBuffer(object):
   def __init__(self, gamma):
@@ -14,19 +15,37 @@ class ExperienceReplayBuffer(object):
     self.done_history = []
     self.reward_pool = []
     self.past_values = []
+    self.past_actions = []
     self.log_probs = []
     self.frame_count = 0
 
-  def remember(self, done, reward, log_prob, value):
+  def remember(self, done, reward, log_prob, action, value):
     self.done_history.append(done)
     self.reward_pool.append(reward)
     self.past_values.append(value)
+    self.past_actions.append(action)
     self.log_probs.append(log_prob)
 
   def get_batch(self):
     self._discount_rewards()
-    self._normalize_rewards()
+    if self.past_values[0] is None:
+      self._normalize_rewards()
+    else:
+      self._prepare_advantage()
     return self.log_probs, self.reward_pool
+
+  def _prepare_advantage(self):
+    advantage = [reward - value[:,action] for reward, value, action in
+                  zip(self.reward_pool, self.past_values, self.past_actions)]
+    # reward_pool is a list
+    # values is a list where each item is
+    #      a 2-dim tensor, 1 (unnormalized) value for each possible action
+    # self.advantage = rewards - values
+    foo = torch.cat(advantage)
+    bar = foo.pow(2).mean()
+
+    self.foo = foo
+    self.bar = bar
 
   def _discount_rewards(self):
     running_add = 0

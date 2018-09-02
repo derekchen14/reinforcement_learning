@@ -3,14 +3,18 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.nn.utils import clip_grad_norm_ as clip_grad
 from torch import Tensor, LongTensor
 
+torch.manual_seed(1)
+np.random.seed(1)
 
 class Brain:
   def __init__(self, num_states, num_actions, config):
     self.num_states = num_states
     self.num_actions = num_actions
     self.hidden_dim = config['hidden_dim']
+    self.max_grad_norm = config['max_grad_norm']
 
     self.model = self._create_model(config['model_type'])
     self.optimizer = self._construct_optimizer(config)
@@ -30,11 +34,13 @@ class Brain:
       return optim.Adam(params, config['learning_rate'])    # 0.001
     elif config['optimizer'] == 'rms':
       return optim.RMSprop(params, config['learning_rate']) # 0.01
+      # return optim.RMSprop(params, lr=7e-4, eps=1e-5, alpha=0.99)
 
   def train(self, loss):
     self.optimizer.zero_grad()
-    loss = torch.cat(loss).sum()
     loss.backward()
+    params = self.model.parameters()
+    clip_grad(params, self.max_grad_norm)
     self.optimizer.step()
 
 def init(module, weight_init, bias_init, gain=1):
@@ -61,8 +67,7 @@ class A2C(nn.Module):
         nn.Linear(hidden_dim, hidden_dim), nn.Tanh(),
         nn.Linear(hidden_dim, num_actions)
     )
-
-def forward(self, x):
+  def forward(self, x):
     return self.actor(x), self.critic(x)
 
 class PolicyNet(nn.Module):

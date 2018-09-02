@@ -3,10 +3,9 @@ import gym
 import pdb
 import argparse
 import numpy as np
-import random
 from collections import deque
 
-from components.agent import Agent, RandomActor
+from components.agent import Agent
 from components.world import World
 from components.plotting import Artist
 
@@ -61,8 +60,10 @@ if __name__ == "__main__":
   print("True Episode {:.3f}".format(np.average(total)))
 
 '''
-1. see if we can replace init, with my_init
-2. see if we can remove the special init completely
+1. see if we can remove the special init completely
+2. Introduce value_loss coefficient to lower impact of DQN loss
+3. Introduce entropy-factor to the loss function to lower impact of noise
+4. Make sure remove normalize rewards doesn't change anything
 '''
 
 

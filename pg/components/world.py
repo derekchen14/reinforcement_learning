@@ -5,6 +5,7 @@ class World:
   def __init__(self, problem):
     self.problem = problem
     self.environment = gym.make(problem)
+    self.environment.seed(1)
     self.all_rewards = []
     self.max_timesteps = 2000
 
@@ -22,7 +23,7 @@ class World:
       action, log_prob, value = agent.act(current_state)
       next_state, reward, done, _ = self.environment.step(action)
 
-      agent.observe(done, reward, log_prob, value)
+      agent.observe(done, reward, log_prob, action, value)
       # if agent == 'ACER': agent.learn()
       current_state = next_state
       episode_reward += reward
