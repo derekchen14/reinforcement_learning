@@ -63,7 +63,7 @@ if __name__ == "__main__":
 '''
 1. see if we can replace init, with my_init
 2. see if we can remove the special init completely
-
+'''
 
 
 

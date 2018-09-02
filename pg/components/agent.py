@@ -14,7 +14,7 @@ EPSILON_DECAY = 700       # speed of decay, larger means slower decay
 UPDATE_TARGET_FREQUENCY = 100
 
 BATCH_SIZE = 5
-HIDDEN_DIM = 36
+HIDDEN_DIM = 36  #64
 
 class Agent:
   def __init__(self, num_states, num_actions, config):
@@ -42,15 +42,16 @@ class Agent:
 
   def act(self, state):
     current_state = Tensor(state).unsqueeze(0)
-    prob_per_action = self.brain.policy(current_state)
+    prob_per_action, value = self.brain.model(current_state)
     m = Bernoulli(prob_per_action)  # Categorical(prob_per_action)
     sampled_action = m.sample()
     log_prob = m.log_prob(Tensor(sampled_action))  # sampled_action.float()
+    distribution_entropy = m.entropy().mean()
 
-    return int(sampled_action.item()), log_prob
+    return int(sampled_action.item()), log_prob, value
 
   def observe(self, *episode):
-    self.memory.remember(*episode)  #(s, a, r, log_prob)
+    self.memory.remember(*episode)  #(s, a, r, log_prob, value)
     # if self.steps % UPDATE_TARGET_FREQUENCY == 0:
     #     self.brain.update_target_network()
     self.steps += 1.0   # anneal epsilon

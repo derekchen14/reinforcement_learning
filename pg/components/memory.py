@@ -13,12 +13,14 @@ class ExperienceReplayBuffer(object):
   def reset_experience(self):
     self.done_history = []
     self.reward_pool = []
+    self.past_values = []
     self.log_probs = []
     self.frame_count = 0
 
-  def remember(self, done, reward, log_prob):
+  def remember(self, done, reward, log_prob, value):
     self.done_history.append(done)
     self.reward_pool.append(reward)
+    self.past_values.append(value)
     self.log_probs.append(log_prob)
 
   def get_batch(self):

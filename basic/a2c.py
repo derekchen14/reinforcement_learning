@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-class A2C():
+class Agent():
   def __init__(self, actor_critic, value_loss_coef, entropy_coef,
                 lr=None, eps=None, alpha=None, max_grad_norm=None):
 
@@ -14,14 +14,13 @@ class A2C():
     self.optimizer = optim.RMSprop(
       actor_critic.parameters(), lr, eps=eps, alpha=alpha)
 
-  def update(self, rollouts):
+  def learn(self, rollouts):
     obs_shape = rollouts.obs.size()[2:]
     action_shape = rollouts.actions.size()[-1]
     num_steps, num_processes, _ = rollouts.rewards.size()
 
     values, action_log_probs, dist_entropy = self.actor_critic.evaluate_actions(
       rollouts.obs[:-1].view(-1, *obs_shape),
-      rollouts.masks[:-1].view(-1, 1),
       rollouts.actions.view(-1, action_shape))
 
     values = values.view(num_steps, num_processes, 1)

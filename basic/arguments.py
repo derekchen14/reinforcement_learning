@@ -29,8 +29,6 @@ def get_args():
                         help='number of forward steps in A2C (default: 5)')
     parser.add_argument('--num-mini-batch', type=int, default=32,
                         help='number of batches for ppo (default: 32)')
-    parser.add_argument('--num-stack', type=int, default=4,
-                        help='number of frames to stack (default: 4)')
     parser.add_argument('--log-interval', type=int, default=140,
                         help='log interval, one log per n updates (default: 140)')
     parser.add_argument('--num-frames', type=int, default=10e6,
