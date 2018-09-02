@@ -10,11 +10,9 @@ def get_args():
     parser.add_argument('--eps', type=float, default=1e-5,
                         help='RMSprop optimizer epsilon (default: 1e-5)')
     parser.add_argument('--alpha', type=float, default=0.99,
-                        help='RMSprop optimizer apha (default: 0.99)')
+                        help='RMSprop optimizer alpha (default: 0.99)')
     parser.add_argument('--gamma', type=float, default=0.99,
                         help='discount factor for rewards (default: 0.99)')
-    parser.add_argument('--tau', type=float, default=0.95,
-                        help='gae parameter (default: 0.95)')
     parser.add_argument('--entropy-coef', type=float, default=0.01,
                         help='entropy term coefficient (default: 0.01)')
     parser.add_argument('--value-loss-coef', type=float, default=0.5,
@@ -29,7 +27,7 @@ def get_args():
                         help='number of forward steps in A2C (default: 5)')
     parser.add_argument('--num-mini-batch', type=int, default=32,
                         help='number of batches for ppo (default: 32)')
-    parser.add_argument('--log-interval', type=int, default=140,
+    parser.add_argument('--log-interval', type=int, default=30,
                         help='log interval, one log per n updates (default: 140)')
     parser.add_argument('--num-frames', type=int, default=10e6,
                         help='number of frames to train (default: 10e6)')

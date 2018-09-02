@@ -38,7 +38,6 @@ if __name__ == "__main__":
   envs = [make_env(args.env_name, args.seed, i, args.log_dir)
         for i in range(args.num_processes)]
   envs = SubprocVecEnv(envs)
-  envs = VecNormalize(envs, gamma=args.gamma)
   device = "cpu"
 
   num_states = envs.observation_space.shape[0]
@@ -46,12 +45,9 @@ if __name__ == "__main__":
 
   actor_critic = Brain(num_states, num_actions)
   actor_critic.to(device)
-  action_shape = 1   # Discrete
 
-  agent = Agent(actor_critic, args.value_loss_coef,
-               args.entropy_coef, lr=args.lr,
-               eps=args.eps, alpha=args.alpha,
-               max_grad_norm=args.max_grad_norm)
+  agent = Agent(actor_critic, args.value_loss_coef, args.entropy_coef, lr=args.lr,
+               eps=args.eps, alpha=args.alpha, max_grad_norm=args.max_grad_norm)
 
   rollouts = ExperienceReplayBuffer(args.num_steps, args.num_processes,
     num_states, envs.action_space)
@@ -69,13 +65,11 @@ if __name__ == "__main__":
       # Sample actions
       with torch.no_grad():
         value, action, action_log_prob = actor_critic.act(rollouts.obs[step])
-
       cpu_actions = action.squeeze(1).cpu().numpy()
       # Observe reward and next obs
       obs, reward, done, info = envs.step(cpu_actions)
       reward = torch.from_numpy(np.expand_dims(np.stack(reward), 1)).float()
       episode_rewards += reward
-
       # If done then clean the history of observations.
       masks = Tensor([[0.0] if done_ else [1.0] for done_ in done])
       final_rewards *= masks
@@ -88,7 +82,7 @@ if __name__ == "__main__":
     with torch.no_grad():
       next_value = actor_critic.get_value(rollouts.obs[-1]).detach()
 
-    rollouts.compute_returns(next_value, args.gamma, args.tau)
+    rollouts.compute_returns(next_value, args.gamma)
     value_loss, action_loss, dist_entropy = agent.learn(rollouts)
 
     rollouts.after_update()

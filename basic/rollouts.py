@@ -30,8 +30,9 @@ class ExperienceReplayBuffer(object):
         self.obs[0].copy_(self.obs[-1])
         self.masks[0].copy_(self.masks[-1])
 
-    def compute_returns(self, next_value, gamma, tau):
+    def compute_returns(self, next_value, gamma):
         self.returns[-1] = next_value
-        for step in reversed(range(self.rewards.size(0))):
-            self.returns[step] = self.returns[step + 1] * \
-                gamma * self.masks[step + 1] + self.rewards[step]
+        for i in reversed(range(self.rewards.size(0))):
+            current_reward = self.rewards[i]
+            future_reward = self.returns[i+1] * gamma * self.masks[i+1]
+            self.returns[i] = current_reward + future_reward
